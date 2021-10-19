@@ -2,7 +2,7 @@
 nuget url: https://www.nuget.org/packages/Fast.RabbitMQ.Core/
 
 in Startup.cs Startup mothod
-
+```csharp
  services.AddFastRabbitMQ(a => {
             a.Host = "127.0.0.1";
             a.PassWord = "guest";
