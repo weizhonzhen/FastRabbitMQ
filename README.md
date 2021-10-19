@@ -30,3 +30,16 @@ in Startup.cs Startup mothod
             //throw new NotImplementedException();
         }
     }
+```
+Test
+```csharp
+ var dic = new Dictionary<string, object>();
+ dic.Add("1", 1);
+ 
+ var config = new FastRabbitMQ.Core.Model.ConfigModel();
+ config.QueueName = "test1";
+ //config.IsAutoAsk = true;
+ FastRabbit.Send(config, dic);
+ FastRabbit.Receive(config);
+ 
+  
