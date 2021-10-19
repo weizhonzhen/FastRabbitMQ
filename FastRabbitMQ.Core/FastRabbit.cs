@@ -63,9 +63,9 @@ namespace FastRabbitMQ.Core
                 else
                 {
                     channe.ExchangeDeclare(model.Exchange.ExchangeName, model.Exchange.ExchangeType.ToString());
-                    var queueName = string.Format("{0}_{1}", model.Exchange.ExchangeName, Guid.NewGuid());
-                    channe.QueueDeclare(queueName, false, false, false, null);
-                    channe.QueueBind(queueName, model.Exchange.ExchangeName, model.Exchange.RouteKey);
+                    model.QueueName = string.Format("{0}_{1}", model.Exchange.ExchangeName, Guid.NewGuid());
+                    channe.QueueDeclare(model.QueueName, false, false, false, null);
+                    channe.QueueBind(model.QueueName, model.Exchange.ExchangeName, model.Exchange.RouteKey);
                 }
 
                 if (!model.IsAutoAsk)
@@ -84,7 +84,7 @@ namespace FastRabbitMQ.Core
                     if (!model.IsAutoAsk)
                         channe.BasicAck(b.DeliveryTag, false);
                 };
-                channe.BasicConsume(queue: model.QueueName, autoAck: model.IsAutoAsk, consumer: consumer);
+                channe.BasicConsume(model.QueueName, model.IsAutoAsk, consumer);
             }
             catch (Exception ex)
             {
