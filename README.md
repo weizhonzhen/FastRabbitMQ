@@ -41,7 +41,7 @@ Test
  //config.IsAutoAsk = true;
  FastRabbit.Send(config, dic);
  FastRabbit.Receive(config);
- 
+ ```
   
 # FastRabbitMQ
 nuget url: https://www.nuget.org/packages/Fast.RabbitMQ/
