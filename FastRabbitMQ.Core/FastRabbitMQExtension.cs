@@ -8,10 +8,9 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class FastRabbitMQExtension
     {
-        private static ConfigData config;
         public static IServiceCollection AddFastRabbitMQ(this IServiceCollection serviceCollection, Action<ConfigData> action)
         {
-            config = new ConfigData();
+            var config = new ConfigData();
             action(config);
 
             IConnectionFactory factory = new ConnectionFactory
@@ -34,20 +33,5 @@ namespace Microsoft.Extensions.DependencyInjection
             ServiceContext.Init(new ServiceEngine(serviceCollection.BuildServiceProvider()));
             return serviceCollection;
         }
-    }
-
-    public class ConfigData
-    {
-        public string Host { get; set; }
-
-        public int Port { get; set; } = 5672;
-
-        public string UserName { get; set; }
-
-        public string PassWord { get; set; }
-
-        public string VirtualHost { get; set; } = "/";
-
-        public IFastRabbitAop aop { get; set; }
     }
 }
