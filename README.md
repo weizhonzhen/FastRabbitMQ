@@ -79,7 +79,7 @@ Test
  var dic = new Dictionary<string, object>();
  dic.Add("1", 1);
  
- var config = new FastRabbitMQ.Core.Model.ConfigModel();
+ var config = new FastRabbitMQ.Model.ConfigModel();
  config.QueueName = "test1";
  //config.IsAutoAsk = true;
  FastRabbit.Send(config, dic);
