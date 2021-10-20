@@ -45,6 +45,7 @@ Test
   
 # FastRabbitMQ
 nuget url: https://www.nuget.org/packages/Fast.RabbitMQ/
+
 in Global.asax  Application_Start mothod
 ```csharp
 FastRabbit.Init(a => {
