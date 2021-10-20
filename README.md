@@ -29,6 +29,11 @@ in Startup.cs Startup mothod
         {
             //throw new NotImplementedException();
         }
+        
+        public void Delete(DeleteContext context)
+        {
+            // throw new NotImplementedException();
+        }
     }
 ```
 Test
@@ -72,6 +77,11 @@ FastRabbit.Init(a => {
         public void Send(SendContext context)
         {
             //throw new NotImplementedException();
+        }
+        
+        public void Delete(DeleteContext context)
+        {
+            // throw new NotImplementedException();
         }
     }
 ```
