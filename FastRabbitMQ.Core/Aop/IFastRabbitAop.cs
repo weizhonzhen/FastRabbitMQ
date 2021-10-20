@@ -9,5 +9,7 @@ namespace FastRabbitMQ.Core.Aop
         void Receive(ReceiveContext context);
 
         void Exception(ExceptionContext context);
+
+        void Delete(DeleteContext context);
     }
 }

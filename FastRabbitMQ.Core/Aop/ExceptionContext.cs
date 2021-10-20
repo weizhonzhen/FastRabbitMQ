@@ -12,6 +12,8 @@ namespace FastRabbitMQ.Core.Aop
 
         public bool isReceive { get; set; }
 
+        public bool isDelete { get; set; }
+
         public ConfigModel config { get; set; }
 
         public Exception ex { get; internal set; }
