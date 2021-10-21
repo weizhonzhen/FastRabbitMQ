@@ -62,14 +62,25 @@ nuget url: https://www.nuget.org/packages/Fast.RabbitMQ/
 
 in Global.asax  Application_Start mothod
 ```csharp
-FastRabbit.Init(a => {
-     a.Host = "127.0.0.1";
-     a.PassWord = "guest";
-     a.UserName = "guest";
-     a.Port = 5672;
-     a.VirtualHost = "/";
-     a.aop = new FastRabbitAop();
-   });
+ FastRabbit.AddMQ(a => {
+         a.Host = "127.0.0.1";
+         a.PassWord = "guest";
+         a.UserName = "guest";
+         a.Port = 5672;
+         a.VirtualHost = "/";
+         a.aop = new FastRabbitAop();
+     });
+
+     FastRabbit.AddReceive(a => {
+          a.QueueName = "test";
+          a.IsAutoAsk = false;
+          a.Exchange = new FastRabbitMQ.Model.Exchange
+          {
+            ExchangeName = "test",
+            ExchangeType = FastRabbitMQ.Model.ExchangeType.direct,
+            RouteKey = "key"
+        };
+    });
    
   public class FastRabbitAop : IFastRabbitAop
     {
