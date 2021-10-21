@@ -12,6 +12,16 @@ in Startup.cs Startup mothod
             a.aop = new FastRabbitAop();
     });
     
+     services.AddFastRabbitMQReceive(a => {
+        a.QueueName = "test";
+        a.IsAutoAsk = false;
+        a.Exchange = new FastRabbitMQ.Core.Model.Exchange
+        {
+             ExchangeName = "test",
+             ExchangeType = FastRabbitMQ.Core.Model.ExchangeType.direct,
+             RouteKey = "key"
+       };
+     });
     
     public class FastRabbitAop : IFastRabbitAop
     {
@@ -45,7 +55,6 @@ Test
  config.QueueName = "test1";
  //config.IsAutoAsk = true;
  FastRabbit.Send(config, dic);
- FastRabbit.Receive(config);
  ```
   
 # FastRabbitMQ
