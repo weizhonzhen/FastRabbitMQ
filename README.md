@@ -114,10 +114,7 @@ in Global.asax  Application_Start mothod
 Test
 ```csharp
  var dic = new Dictionary<string, object>();
- dic.Add("1", 1);
-  var dic = new Dictionary<string, object>();
- dic.Add("1", 1);
-            
+ dic.Add("1", 1);            
  var config = new FastRabbitMQ.Model.ConfigModel();
  config.QueueName = "test1";
  config.IsAutoAsk = false;
