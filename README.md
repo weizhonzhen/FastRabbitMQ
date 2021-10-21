@@ -12,6 +12,18 @@ in Startup.cs Startup mothod
             a.aop = new FastRabbitAop();
     });
     
+    or 
+    services.AddFastRabbitMQ(new FastRabbitAop());
+    RabbitMQ info in db.json
+   
+   "RabbitMQ": {
+     "Host": "127.0.0.1",
+     "PassWord": "guest",
+     "UserName": "guest",
+     "Port": 5672,
+     "VirtualHost": "/"
+    }
+    
      services.AddFastRabbitMQReceive(a => {
         a.QueueName = "test";
         a.IsAutoAsk = false;
