@@ -65,11 +65,5 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\FastUntility\FastUntility.csproj">
-      <Project>{209cd228-0837-467d-b869-0db31af04362}</Project>
-      <Name>FastUntility</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

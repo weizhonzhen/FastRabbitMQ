@@ -1,6 +1,4 @@
-﻿using FastUntility.Base;
-using FastUntility.Cache;
-using System;
+﻿using System;
 using System.Configuration;
 using System.IO;
 using System.Reflection;
@@ -10,6 +8,7 @@ namespace FastRabbitMQ.Config
 {
     internal class RabbitMQConfig : ConfigurationSection
     {
+
         #region 获取配置信息
         /// <summary>
         /// 获取配置信息
@@ -18,10 +17,7 @@ namespace FastRabbitMQ.Config
         public static RabbitMQConfig GetConfig(string projectName = null, string dbFile = "db.config")
         {
             var section = new RabbitMQConfig();
-            var cacheKey = "RabbitMQ.db.config";
-            if (BaseCache.Exists(cacheKey))
-                return BaseCache.Get<RabbitMQConfig>(cacheKey);
-            else if (projectName == null)
+            if (projectName == null)
             {
                 if (dbFile.ToLower() == "web.config")
                     section = (RabbitMQConfig)ConfigurationManager.GetSection("RabbitMQConfig");
@@ -51,14 +47,13 @@ namespace FastRabbitMQ.Config
                                 section.PassWord = node.Attributes["PassWord"].Value;
                                 section.UserName = node.Attributes["UserName"].Value;
                                 section.VirtualHost = node.Attributes["VirtualHost"].Value;
-                                section.Port = node.Attributes["Port"].Value.ToInt(5672);
+                                section.Port = int.Parse(node.Attributes["Port"].Value);
                             }
                         }
                     }
                 }
             }
 
-            BaseCache.Set<RabbitMQConfig>(cacheKey, section);
             return section;
         }
         #endregion
