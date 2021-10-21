@@ -125,7 +125,7 @@ namespace FastRabbitMQ.Core
             }
         }
 
-        private static Dictionary<string, object> ToDic(string content)
+        internal static Dictionary<string, object> ToDic(string content)
         {
             var dic = new Dictionary<string, object>();
 
