@@ -1,4 +1,5 @@
 ﻿using FastRabbitMQ.Aop;
+using FastRabbitMQ.Config;
 using FastRabbitMQ.Model;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -7,6 +8,7 @@ using RabbitMQ.Client.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace FastRabbitMQ
@@ -38,6 +40,29 @@ namespace FastRabbitMQ
                 throw new Exception("FastRabbit.init aop not null");
 
             aop = config.aop;
+        }
+
+        public static void AddMQ(IFastRabbitAop _aop, string dbFile = "db.config", string projectName = null)
+        {
+            if (projectName != null)
+                projectName = Assembly.GetCallingAssembly().GetName().Name;
+            var config = RabbitMQConfig.GetConfig(projectName, dbFile);
+            
+            IConnectionFactory factory = new ConnectionFactory
+            {
+                HostName = config.Host,
+                Port = config.Port,
+                UserName = config.UserName,
+                Password = config.PassWord,
+                VirtualHost = config.VirtualHost,
+                AutomaticRecoveryEnabled = true
+            };
+            conn = factory.CreateConnection();
+
+            if (_aop == null)
+                throw new Exception("FastRabbit.init aop not null");
+
+            aop = _aop;
         }
 
         public static void Send(ConfigModel model, Dictionary<string, object> content)
