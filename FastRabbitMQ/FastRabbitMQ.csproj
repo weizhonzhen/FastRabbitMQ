@@ -53,6 +53,7 @@
     <Compile Include="Aop\IFastRabbitAop.cs" />
     <Compile Include="Aop\ReceiveContext.cs" />
     <Compile Include="Aop\SendContext.cs" />
+    <Compile Include="ConfigData.cs" />
     <Compile Include="FastRabbit.cs" />
     <Compile Include="Model\ConfigModel.cs" />
     <Compile Include="Model\Exchange.cs" />

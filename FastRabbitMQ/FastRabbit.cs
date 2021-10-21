@@ -17,7 +17,7 @@ namespace FastRabbitMQ
         private static IConnection conn;
         private static IFastRabbitAop aop;
 
-        public static void Init(Action<ConfigData> action)
+        public static void AddMQ(Action<ConfigData> action)
         {
             config = new ConfigData();
             action(config);
@@ -75,24 +75,29 @@ namespace FastRabbitMQ
             }
         }
 
-        public static void Receive(ConfigModel model)
+        public static void AddReceive(Action<ConfigModel> action)
         {
+            var config = new ConfigModel();
+            action(config);
             Dictionary<string, object> content = new Dictionary<string, object>();
+
+            if (conn == null)
+                throw new Exception("before AddMQ");
 
             try
             {
                 var channe = conn.CreateModel();
-                if (model.Exchange == null)
-                    channe.QueueDeclare(model.QueueName, false, false, false, null);
+                if (config.Exchange == null)
+                    channe.QueueDeclare(config.QueueName, false, false, false, null);
                 else
                 {
-                    channe.ExchangeDeclare(model.Exchange.ExchangeName, model.Exchange.ExchangeType.ToString());
-                    model.QueueName = string.Format("{0}_{1}", model.Exchange.ExchangeName, Guid.NewGuid());
-                    channe.QueueDeclare(model.QueueName, false, false, false, null);
-                    channe.QueueBind(model.QueueName, model.Exchange.ExchangeName, model.Exchange.RouteKey);
+                    channe.ExchangeDeclare(config.Exchange.ExchangeName, config.Exchange.ExchangeType.ToString());
+                    config.QueueName = string.Format("{0}_{1}", config.Exchange.ExchangeName, Guid.NewGuid());
+                    channe.QueueDeclare(config.QueueName, false, false, false, null);
+                    channe.QueueBind(config.QueueName, config.Exchange.ExchangeName, config.Exchange.RouteKey);
                 }
 
-                if (!model.IsAutoAsk)
+                if (!config.IsAutoAsk)
                     channe.BasicQos(0, 1, false);
                 var consumer = new EventingBasicConsumer(channe);
 
@@ -101,14 +106,14 @@ namespace FastRabbitMQ
                     content = ToDic(Encoding.UTF8.GetString(b.Body.ToArray()));
 
                     var receive = new ReceiveContext();
-                    receive.config = model;
+                    receive.config = config;
                     receive.content = content;
                     aop.Receive(receive);
 
-                    if (!model.IsAutoAsk)
+                    if (!config.IsAutoAsk)
                         channe.BasicAck(b.DeliveryTag, false);
                 };
-                channe.BasicConsume(model.QueueName, model.IsAutoAsk, consumer);
+                channe.BasicConsume(config.QueueName, config.IsAutoAsk, consumer);
             }
             catch (Exception ex)
             {
@@ -116,7 +121,7 @@ namespace FastRabbitMQ
                 context.content = content;
                 context.ex = ex;
                 context.isReceive = true;
-                context.config = model;
+                context.config = config;
                 aop.Exception(context);
             }
         }
@@ -161,21 +166,6 @@ namespace FastRabbitMQ
                 dic.Add(temp.Key, temp.Value);
             }
             return dic;
-        }
-
-        public class ConfigData
-        {
-            public string Host { get; set; }
-
-            public int Port { get; set; } = 5672;
-
-            public string UserName { get; set; }
-
-            public string PassWord { get; set; }
-
-            public string VirtualHost { get; set; } = "/";
-
-            public IFastRabbitAop aop { get; set; }
         }
     }
 }
