@@ -49,54 +49,6 @@ namespace FastRabbitMQ.Core
             }
         }
 
-        public static void Receive(ConfigModel model)
-        {
-            var conn = ServiceContext.Engine.Resolve<IConnection>();
-            var aop = ServiceContext.Engine.Resolve<IFastRabbitAop>();
-            Dictionary<string, object> content = new Dictionary<string, object>();
-
-            try
-            {
-                var channe = conn.CreateModel();
-                if (model.Exchange == null)
-                    channe.QueueDeclare(model.QueueName, false, false, false, null);
-                else
-                {
-                    channe.ExchangeDeclare(model.Exchange.ExchangeName, model.Exchange.ExchangeType.ToString());
-                    model.QueueName = string.Format("{0}_{1}", model.Exchange.ExchangeName, Guid.NewGuid());
-                    channe.QueueDeclare(model.QueueName, false, false, false, null);
-                    channe.QueueBind(model.QueueName, model.Exchange.ExchangeName, model.Exchange.RouteKey);
-                }
-
-                if (!model.IsAutoAsk)
-                    channe.BasicQos(0, 1, false);
-                var consumer = new EventingBasicConsumer(channe);
-
-                consumer.Received += (a, b) =>
-                {
-                    content = ToDic(Encoding.UTF8.GetString(b.Body.ToArray()));
-
-                    var receive = new ReceiveContext();
-                    receive.config = model;
-                    receive.content = content;
-                    aop.Receive(receive);
-
-                    if (!model.IsAutoAsk)
-                        channe.BasicAck(b.DeliveryTag, false);
-                };
-                channe.BasicConsume(model.QueueName, model.IsAutoAsk, consumer);
-            }
-            catch (Exception ex)
-            {
-                var context = new ExceptionContext();
-                context.content = content;
-                context.ex = ex;
-                context.isReceive = true;
-                context.config = model;
-                aop.Exception(context);
-            }
-        }
-
         public static void Delete(ConfigModel model)
         {
             var conn = ServiceContext.Engine.Resolve<IConnection>();
