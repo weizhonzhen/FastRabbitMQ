@@ -110,10 +110,12 @@ Test
  var dic = new Dictionary<string, object>();
  dic.Add("1", 1);
  
- var config = new FastRabbitMQ.Model.ConfigModel();
- config.QueueName = "test1";
- //config.IsAutoAsk = true;
+ config.Exchange = new Exchange
+ {
+      ExchangeName = "test",
+      ExchangeType = ExchangeType.direct,
+      RouteKey = "key"
+ };
  FastRabbit.Send(config, dic);
- FastRabbit.Receive(config);
  ```
     
