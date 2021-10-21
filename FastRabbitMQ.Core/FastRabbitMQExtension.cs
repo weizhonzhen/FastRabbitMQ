@@ -8,16 +8,41 @@ using RabbitMQ.Client.Events;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using System.Text;
+using Microsoft.Extensions.Configuration;
+using System.IO;
+using Microsoft.Extensions.Options;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
     public static class FastRabbitMQExtension
     {
+        private static string key = "RabbitMQ";
+
+        public static IServiceCollection AddFastRabbitMQ(this IServiceCollection serviceCollection, IFastRabbitAop aop)
+        {
+            var build = new ConfigurationBuilder();
+            build.SetBasePath(Directory.GetCurrentDirectory());
+            build.AddJsonFile("db.json", optional: true, reloadOnChange: true);
+            var config = new ServiceCollection().AddOptions().Configure<ConfigData>(build.Build().GetSection(key)).BuildServiceProvider().GetService<IOptions<ConfigData>>().Value;
+
+            if (config.Host == null)
+                throw new Exception(@"services.AddFastRabbitMQ(a => {  }); 
+                                    or ( services.AddFastRabbitMQ(); and db.json add 'RabbitMQ':{'Server':'','PassWord':'','UserName':'','Port':5672,'VirtualHost':'/'} )");
+            config.aop = aop;
+            init(serviceCollection,config);
+            return serviceCollection;
+        }
+
         public static IServiceCollection AddFastRabbitMQ(this IServiceCollection serviceCollection, Action<ConfigData> action)
         {
             var config = new ConfigData();
             action(config);
+            init(serviceCollection, config);
+            return serviceCollection;
+        }
 
+        private static void init(IServiceCollection serviceCollection, ConfigData config)
+        {
             IConnectionFactory factory = new ConnectionFactory
             {
                 HostName = config.Host,
@@ -36,10 +61,9 @@ namespace Microsoft.Extensions.DependencyInjection
             serviceCollection.AddSingleton<IConnection>(conn);
             serviceCollection.AddSingleton<IFastRabbitAop>(config.aop);
             ServiceContext.Init(new ServiceEngine(serviceCollection.BuildServiceProvider()));
-            return serviceCollection;
         }
 
-        public static IServiceCollection AddFastRabbitMQReceive(this IServiceCollection serviceCollection,Action<ConfigModel> action)
+        public static IServiceCollection AddFastRabbitMQReceive(this IServiceCollection serviceCollection, Action<ConfigModel> action)
         {
             if (ServiceContext.Engine == null)
                 throw new Exception("before AddFastRabbitMQ");
