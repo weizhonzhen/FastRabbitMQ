@@ -19,7 +19,7 @@ namespace FastRabbitMQ.Config
             var section = new RabbitMQConfig();
             if (projectName == null)
             {
-                if (dbFile.ToLower() == "web.config")
+                if (dbFile.ToLower() == "web.config" || dbFile.ToLower() == "app.config")
                     section = (RabbitMQConfig)ConfigurationManager.GetSection("RabbitMQConfig");
                 else
                 {
