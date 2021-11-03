@@ -42,7 +42,7 @@ namespace FastRabbitMQ
             aop = config.aop;
         }
 
-        public static void AddMQ(IFastRabbitAop _aop, string dbFile = "db.config", string projectName = null)
+        public static void AddMQ(IFastRabbitAop _aop, string dbFile = "web.config", string projectName = null)
         {
             if (projectName != null)
                 projectName = Assembly.GetCallingAssembly().GetName().Name;

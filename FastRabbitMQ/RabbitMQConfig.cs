@@ -14,7 +14,7 @@ namespace FastRabbitMQ.Config
         /// 获取配置信息
         /// </summary>
         /// <returns></returns>
-        public static RabbitMQConfig GetConfig(string projectName = null, string dbFile = "db.config")
+        public static RabbitMQConfig GetConfig(string projectName = null, string dbFile = "web.config")
         {
             var section = new RabbitMQConfig();
             if (projectName == null)
