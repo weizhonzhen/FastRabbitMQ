@@ -1,12 +1,13 @@
 ﻿using FastRabbitMQ.Core.Aop;
 using FastRabbitMQ.Core.Model;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Unicode;
 
 namespace FastRabbitMQ.Core
 {
@@ -14,13 +15,14 @@ namespace FastRabbitMQ.Core
     {
         public static void Send(ConfigModel model, Dictionary<string, object> content)
         {
+            var jsonOption = new JsonSerializerOptions() { Encoder = JavaScriptEncoder.Create(UnicodeRanges.All) };
             var conn = ServiceContext.Engine.Resolve<IConnection>();
             var aop = ServiceContext.Engine.Resolve<IFastRabbitAop>();
             try
             {
                 using (var channe = conn.CreateModel())
                 {
-                    var body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(content).ToString());
+                    var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(content, jsonOption));
                     if (model.Exchange == null)
                     {
                         channe.QueueDeclare(model.QueueName, false, false, false, null);
@@ -57,17 +59,17 @@ namespace FastRabbitMQ.Core
             {
                 using (var channe = conn.CreateModel())
                 {
-                    if (model.Exchange == null)                    
-                        channe.QueueDelete(model.QueueName);                    
+                    if (model.Exchange == null)
+                        channe.QueueDelete(model.QueueName);
                     else
                         channe.ExchangeDelete(model.Exchange.ExchangeName);
-                    
+
                     var delete = new DeleteContext();
                     delete.config = model;
                     aop.Delete(delete);
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 var context = new ExceptionContext();
                 context.ex = ex;
@@ -79,16 +81,18 @@ namespace FastRabbitMQ.Core
 
         internal static Dictionary<string, object> ToDic(string content)
         {
+            var jsonOption = new JsonSerializerOptions() { Encoder = JavaScriptEncoder.Create(UnicodeRanges.All) };
             var dic = new Dictionary<string, object>();
 
             if (string.IsNullOrEmpty(content))
                 return dic;
 
-            var jo = JObject.Parse(content);
-
-            foreach (var temp in jo)
+            using (var document = JsonDocument.Parse(content))
             {
-                dic.Add(temp.Key, temp.Value);
+                foreach (var element in document.RootElement.EnumerateObject())
+                {
+                    dic.Add(element.Name, element.Value.GetRawText());
+                }
             }
             return dic;
         }

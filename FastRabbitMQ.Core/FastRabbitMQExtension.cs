@@ -6,7 +6,6 @@ using FastRabbitMQ.Core.Aop;
 using FastRabbitMQ.Core.Model;
 using RabbitMQ.Client.Events;
 using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using System.IO;
