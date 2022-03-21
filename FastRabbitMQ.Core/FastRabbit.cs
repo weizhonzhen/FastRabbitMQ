@@ -15,7 +15,7 @@ namespace FastRabbitMQ.Core
     {
         public static void Send(ConfigModel model, Dictionary<string, object> content)
         {
-            var jsonOption = new JsonSerializerOptions() { Encoder = JavaScriptEncoder.Create(UnicodeRanges.All) };
+            var jsonOption = new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
             var conn = ServiceContext.Engine.Resolve<IConnection>();
             var aop = ServiceContext.Engine.Resolve<IFastRabbitAop>();
             try
@@ -81,7 +81,7 @@ namespace FastRabbitMQ.Core
 
         internal static Dictionary<string, object> ToDic(string content)
         {
-            var jsonOption = new JsonSerializerOptions() { Encoder = JavaScriptEncoder.Create(UnicodeRanges.All) };
+            var jsonOption = new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
             var dic = new Dictionary<string, object>();
 
             if (string.IsNullOrEmpty(content))
