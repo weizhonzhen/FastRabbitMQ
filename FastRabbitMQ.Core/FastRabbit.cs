@@ -25,12 +25,12 @@ namespace FastRabbitMQ.Core
                     var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(content, jsonOption));
                     if (model.Exchange == null)
                     {
-                        channe.QueueDeclare(model.QueueName, false, false, false, null);
+                        channe.QueueDeclare(model.QueueName, model.Durable, model.Exclusive, model.AutoDelete, null);
                         channe.BasicPublish("", model.QueueName, null, body);
                     }
                     else
                     {
-                        channe.ExchangeDeclare(model.Exchange.ExchangeName, model.Exchange.ExchangeType.ToString());
+                        channe.ExchangeDeclare(model.Exchange.ExchangeName, model.Exchange.ExchangeType.ToString(), model.Durable, model.AutoDelete, null);
                         channe.BasicPublish(model.Exchange.ExchangeName, model.Exchange.RouteKey, null, body);
                     }
 
@@ -60,9 +60,9 @@ namespace FastRabbitMQ.Core
                 using (var channe = conn.CreateModel())
                 {
                     if (model.Exchange == null)
-                        channe.QueueDelete(model.QueueName);
+                        channe.QueueDelete(model.QueueName, model.IfUnused, model.IfEmpty);
                     else
-                        channe.ExchangeDelete(model.Exchange.ExchangeName);
+                        channe.ExchangeDelete(model.Exchange.ExchangeName,model.IfUnused);
 
                     var delete = new DeleteContext();
                     delete.config = model;
