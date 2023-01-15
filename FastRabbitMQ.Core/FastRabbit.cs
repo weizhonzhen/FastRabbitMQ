@@ -14,7 +14,7 @@ namespace FastRabbitMQ.Core
 {
     public static class FastRabbit
     {
-        public static void Send(ConfigModel model, Dictionary<string, object> content)
+        public static void Send(ConfigModel config, Dictionary<string, object> content)
         {
             var jsonOption = new JsonSerializerOptions() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
             var conn = ServiceContext.Engine.Resolve<IConnection>();
@@ -24,19 +24,19 @@ namespace FastRabbitMQ.Core
                 using (var channe = conn.CreateModel())
                 {
                     var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(content, jsonOption));
-                    if (model.Exchange == null)
+                    if (config.Exchange == null)
                     {
-                        channe.QueueDeclare(model.QueueName, model.IsDurable, model.IsExclusive, model.IsAutoDelete, null);
-                        channe.BasicPublish("", model.QueueName, null, body);
+                        channe.QueueDeclare(config.QueueName, config.IsDurable, config.IsExclusive, config.IsAutoDelete, null);
+                        channe.BasicPublish("", config.QueueName, null, body);
                     }
                     else
                     {
-                        channe.ExchangeDeclare(model.Exchange.ExchangeName, model.Exchange.ExchangeType.ToString(), model.IsDurable, model.IsAutoDelete, null);
-                        channe.BasicPublish(model.Exchange.ExchangeName, model.Exchange.RouteKey, null, body);
+                        channe.ExchangeDeclare(config.Exchange.ExchangeName, config.Exchange.ExchangeType.ToString(), config.IsDurable, config.IsAutoDelete, null);
+                        channe.BasicPublish(config.Exchange.ExchangeName, config.Exchange.RouteKey, null, body);
                     }
 
                     var send = new SendContext();
-                    send.config = model;
+                    send.config = config;
                     send.content = content;
                     aop.Send(send);
                 }
@@ -47,12 +47,12 @@ namespace FastRabbitMQ.Core
                 context.content = content;
                 context.ex = ex;
                 context.isSend = true;
-                context.config = model;
+                context.config = config;
                 aop.Exception(context);
             }
         }
 
-        public static void Delete(ConfigModel model)
+        public static void Delete(ConfigModel config)
         {
             var conn = ServiceContext.Engine.Resolve<IConnection>();
             var aop = ServiceContext.Engine.Resolve<IFastRabbitAop>();
@@ -60,13 +60,13 @@ namespace FastRabbitMQ.Core
             {
                 using (var channe = conn.CreateModel())
                 {
-                    if (model.Exchange == null)
-                        channe.QueueDelete(model.QueueName, model.IsUnused, model.IsEmpty);
+                    if (config.Exchange == null)
+                        channe.QueueDelete(config.QueueName, config.IsUnused, config.IsEmpty);
                     else
-                        channe.ExchangeDelete(model.Exchange.ExchangeName,model.IsUnused);
+                        channe.ExchangeDelete(config.Exchange.ExchangeName,config.IsUnused);
 
                     var delete = new DeleteContext();
-                    delete.config = model;
+                    delete.config = config;
                     aop.Delete(delete);
                 }
             }
@@ -75,7 +75,7 @@ namespace FastRabbitMQ.Core
                 var context = new ExceptionContext();
                 context.ex = ex;
                 context.isDelete = true;
-                context.config = model;
+                context.config = config;
                 aop.Exception(context);
             }
         }
