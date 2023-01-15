@@ -65,26 +65,26 @@ namespace FastRabbitMQ
             aop = _aop;
         }
 
-        public static void Send(ConfigModel model, Dictionary<string, object> content)
+        public static void Send(ConfigModel config, Dictionary<string, object> content)
         {
             try
             {
                 using (var channe = conn.CreateModel())
                 {
                     var body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(content).ToString());
-                    if (model.Exchange == null)
+                    if (config.Exchange == null)
                     {
-                        channe.QueueDeclare(model.QueueName, false, false, false, null);
-                        channe.BasicPublish("", model.QueueName, null, body);
+                        channe.QueueDeclare(config.QueueName, config.IsDurable, config.IsExclusive, config.IsAutoDelete, null);
+                        channe.BasicPublish("", config.QueueName, null, body);
                     }
                     else
                     {
-                        channe.ExchangeDeclare(model.Exchange.ExchangeName, model.Exchange.ExchangeType.ToString());
-                        channe.BasicPublish(model.Exchange.ExchangeName, model.Exchange.RouteKey, null, body);
+                        channe.ExchangeDeclare(config.Exchange.ExchangeName, config.Exchange.ExchangeType.ToString(),config.IsDurable,config.IsAutoDelete,null);
+                        channe.BasicPublish(config.Exchange.ExchangeName, config.Exchange.RouteKey, null, body);
                     }
 
                     var send = new SendContext();
-                    send.config = model;
+                    send.config = config;
                     send.content = content;
                     aop.Send(send);
                 }
@@ -95,7 +95,7 @@ namespace FastRabbitMQ
                 context.content = content;
                 context.ex = ex;
                 context.isSend = true;
-                context.config = model;
+                context.config = config;
                 aop.Exception(context);
             }
         }
@@ -113,12 +113,12 @@ namespace FastRabbitMQ
             {
                 var channe = conn.CreateModel();
                 if (config.Exchange == null)
-                    channe.QueueDeclare(config.QueueName, false, false, false, null);
+                    channe.QueueDeclare(config.QueueName, config.IsDurable, config.IsExclusive, config.IsAutoDelete, null);
                 else
                 {
                     channe.ExchangeDeclare(config.Exchange.ExchangeName, config.Exchange.ExchangeType.ToString());
                     config.QueueName = string.Format("{0}_{1}", config.Exchange.ExchangeName, Guid.NewGuid());
-                    channe.QueueDeclare(config.QueueName, false, false, false, null);
+                    channe.QueueDeclare(config.QueueName, config.IsDurable, config.IsExclusive, config.IsAutoDelete, null);
                     channe.QueueBind(config.QueueName, config.Exchange.ExchangeName, config.Exchange.RouteKey);
                 }
 
@@ -151,19 +151,19 @@ namespace FastRabbitMQ
             }
         }
 
-        public static void Delete(ConfigModel model)
+        public static void Delete(ConfigModel config)
         {
             try
             {
                 using (var channe = conn.CreateModel())
                 {
-                    if (model.Exchange == null)
-                        channe.QueueDelete(model.QueueName);
+                    if (config.Exchange == null)
+                        channe.QueueDelete(config.QueueName);
                     else
-                        channe.ExchangeDelete(model.Exchange.ExchangeName);
+                        channe.ExchangeDelete(config.Exchange.ExchangeName);
 
                     var delete = new DeleteContext();
-                    delete.config = model;
+                    delete.config = config;
                     aop.Delete(delete);
                 }
             }
@@ -172,7 +172,7 @@ namespace FastRabbitMQ
                 var context = new ExceptionContext();
                 context.ex = ex;
                 context.isDelete = true;
-                context.config = model;
+                context.config = config;
                 aop.Exception(context);
             }
         }
