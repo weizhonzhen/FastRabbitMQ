@@ -10,7 +10,7 @@ namespace FastRabbitMQ.Core.Model
 
         public bool IsAutoAsk { get; set; }
 
-        public bool IsDurable { get; set; } = true;
+        public bool IsDurable { get; set; }
 
         public bool IsExclusive { get; set; }
 
