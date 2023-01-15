@@ -10,14 +10,14 @@ namespace FastRabbitMQ.Core.Model
 
         public bool IsAutoAsk { get; set; }
 
-        public bool Durable { get; set; }
+        public bool IsDurable { get; set; } = true;
 
-        public bool Exclusive { get; set; }
+        public bool IsExclusive { get; set; }
 
-        public bool AutoDelete { get; set; }
+        public bool IsAutoDelete { get; set; }
 
-        public bool IfUnused { get; set; }
+        public bool IsUnused { get; set; }
 
-        public bool IfEmpty { get; set; }
+        public bool IsEmpty { get; set; }
     }
 }
