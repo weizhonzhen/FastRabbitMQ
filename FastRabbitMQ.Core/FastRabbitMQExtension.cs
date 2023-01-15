@@ -10,6 +10,7 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using System.IO;
 using Microsoft.Extensions.Options;
+using System.Threading.Channels;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
@@ -78,12 +79,12 @@ namespace Microsoft.Extensions.DependencyInjection
             {
                 var channe = conn.CreateModel();
                 if (config.Exchange == null)
-                    channe.QueueDeclare(config.QueueName, false, false, false, null);
+                    channe.QueueDeclare(config.QueueName,config.IsDurable,config.IsExclusive,config.IsAutoDelete,null);
                 else
                 {
-                    channe.ExchangeDeclare(config.Exchange.ExchangeName, config.Exchange.ExchangeType.ToString());
+                    channe.ExchangeDeclare(config.Exchange.ExchangeName, config.Exchange.ExchangeType.ToString(), config.IsDurable, config.IsAutoDelete, null);
                     config.QueueName = string.Format("{0}_{1}", config.Exchange.ExchangeName, Guid.NewGuid());
-                    channe.QueueDeclare(config.QueueName, false, false, false, null);
+                    channe.QueueDeclare(config.QueueName,config.IsDurable,config.IsExclusive,config.IsAutoDelete,null);
                     channe.QueueBind(config.QueueName, config.Exchange.ExchangeName, config.Exchange.RouteKey);
                 }
 

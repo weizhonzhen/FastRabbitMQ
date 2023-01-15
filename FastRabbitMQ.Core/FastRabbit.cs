@@ -8,6 +8,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Unicode;
+using System.Threading.Channels;
 
 namespace FastRabbitMQ.Core
 {
@@ -25,12 +26,12 @@ namespace FastRabbitMQ.Core
                     var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(content, jsonOption));
                     if (model.Exchange == null)
                     {
-                        channe.QueueDeclare(model.QueueName, model.Durable, model.Exclusive, model.AutoDelete, null);
+                        channe.QueueDeclare(model.QueueName, model.IsDurable, model.IsExclusive, model.IsAutoDelete, null);
                         channe.BasicPublish("", model.QueueName, null, body);
                     }
                     else
                     {
-                        channe.ExchangeDeclare(model.Exchange.ExchangeName, model.Exchange.ExchangeType.ToString(), model.Durable, model.AutoDelete, null);
+                        channe.ExchangeDeclare(model.Exchange.ExchangeName, model.Exchange.ExchangeType.ToString(), model.IsDurable, model.IsAutoDelete, null);
                         channe.BasicPublish(model.Exchange.ExchangeName, model.Exchange.RouteKey, null, body);
                     }
 
@@ -60,9 +61,9 @@ namespace FastRabbitMQ.Core
                 using (var channe = conn.CreateModel())
                 {
                     if (model.Exchange == null)
-                        channe.QueueDelete(model.QueueName, model.IfUnused, model.IfEmpty);
+                        channe.QueueDelete(model.QueueName, model.IsUnused, model.IsEmpty);
                     else
-                        channe.ExchangeDelete(model.Exchange.ExchangeName,model.IfUnused);
+                        channe.ExchangeDelete(model.Exchange.ExchangeName,model.IsUnused);
 
                     var delete = new DeleteContext();
                     delete.config = model;
@@ -78,6 +79,7 @@ namespace FastRabbitMQ.Core
                 aop.Exception(context);
             }
         }
+
 
         internal static Dictionary<string, object> ToDic(string content)
         {
