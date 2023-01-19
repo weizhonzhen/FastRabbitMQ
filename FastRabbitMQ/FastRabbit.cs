@@ -72,14 +72,13 @@ namespace FastRabbitMQ
                 using (var channe = conn.CreateModel())
                 {
                     var body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(content).ToString());
+                    channe.QueueDeclare(config.QueueName, config.IsDurable, config.IsExclusive, config.IsAutoDelete, null);
                     if (config.Exchange == null)
-                    {
-                        channe.QueueDeclare(config.QueueName, config.IsDurable, config.IsExclusive, config.IsAutoDelete, null);
                         channe.BasicPublish("", config.QueueName, null, body);
-                    }
                     else
                     {
-                        channe.ExchangeDeclare(config.Exchange.ExchangeName, config.Exchange.ExchangeType.ToString(),config.IsDurable,config.IsAutoDelete,null);
+                        channe.ExchangeDeclare(config.Exchange.ExchangeName, config.Exchange.ExchangeType.ToString(), config.IsDurable, config.IsAutoDelete, null);
+                        channe.QueueBind(config.QueueName, config.Exchange.ExchangeName, config.Exchange.RouteKey);
                         channe.BasicPublish(config.Exchange.ExchangeName, config.Exchange.RouteKey, null, body);
                     }
 
@@ -109,16 +108,19 @@ namespace FastRabbitMQ
             if (conn == null)
                 throw new Exception("before AddMQ");
 
+            if (string.IsNullOrEmpty(config.QueueName))
+                throw new Exception("QueueName is not null");
+
             try
             {
                 var channe = conn.CreateModel();
-                if (config.Exchange == null)
-                    channe.QueueDeclare(config.QueueName, config.IsDurable, config.IsExclusive, config.IsAutoDelete, null);
-                else
+                channe.QueueDeclare(config.QueueName, config.IsDurable, config.IsExclusive, config.IsAutoDelete, null);
+                if (config.Exchange != null)
                 {
-                    channe.ExchangeDeclare(config.Exchange.ExchangeName, config.Exchange.ExchangeType.ToString());
-                    config.QueueName = string.Format("{0}_{1}", config.Exchange.ExchangeName, Guid.NewGuid());
-                    channe.QueueDeclare(config.QueueName, config.IsDurable, config.IsExclusive, config.IsAutoDelete, null);
+                    if (string.IsNullOrEmpty(config.Exchange.ExchangeName))
+                        throw new Exception("Exchange ExchangeName is not null");
+
+                    channe.ExchangeDeclare(config.Exchange.ExchangeName, config.Exchange.ExchangeType.ToString(), config.IsDurable, config.IsAutoDelete, null);
                     channe.QueueBind(config.QueueName, config.Exchange.ExchangeName, config.Exchange.RouteKey);
                 }
 
