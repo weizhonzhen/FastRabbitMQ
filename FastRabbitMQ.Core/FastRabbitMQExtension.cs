@@ -75,21 +75,24 @@ namespace Microsoft.Extensions.DependencyInjection
             var config = new ConfigModel();
             action(config);
 
+            if (string.IsNullOrEmpty(config.QueueName))
+                throw new Exception("QueueName is not null");
+
             try
             {
                 var channe = conn.CreateModel();
-                if (config.Exchange == null)
-                    channe.QueueDeclare(config.QueueName,config.IsDurable,config.IsExclusive,config.IsAutoDelete,null);
-                else
+                channe.QueueDeclare(config.QueueName, config.IsDurable, config.IsExclusive, config.IsAutoDelete, null);
+                if (config.Exchange != null)
                 {
+                    if (string.IsNullOrEmpty(config.Exchange.ExchangeName))
+                        throw new Exception("Exchange ExchangeName is not null");
+
                     channe.ExchangeDeclare(config.Exchange.ExchangeName, config.Exchange.ExchangeType.ToString(), config.IsDurable, config.IsAutoDelete, null);
-                    config.QueueName = string.Format("{0}_{1}", config.Exchange.ExchangeName, Guid.NewGuid());
-                    channe.QueueDeclare(config.QueueName,config.IsDurable,config.IsExclusive,config.IsAutoDelete,null);
                     channe.QueueBind(config.QueueName, config.Exchange.ExchangeName, config.Exchange.RouteKey);
                 }
 
                 if (!config.IsAutoAsk)
-                    channe.BasicQos(0, 1, false);
+                    channe.BasicQos(0, 1, true);
                 var consumer = new EventingBasicConsumer(channe);
 
                 consumer.Received += (a, b) =>

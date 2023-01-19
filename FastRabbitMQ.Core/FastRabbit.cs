@@ -24,14 +24,13 @@ namespace FastRabbitMQ.Core
                 using (var channe = conn.CreateModel())
                 {
                     var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(content, jsonOption));
+                    channe.QueueDeclare(config.QueueName, config.IsDurable, config.IsExclusive, config.IsAutoDelete, null);
                     if (config.Exchange == null)
-                    {
-                        channe.QueueDeclare(config.QueueName, config.IsDurable, config.IsExclusive, config.IsAutoDelete, null);
                         channe.BasicPublish("", config.QueueName, null, body);
-                    }
                     else
                     {
                         channe.ExchangeDeclare(config.Exchange.ExchangeName, config.Exchange.ExchangeType.ToString(), config.IsDurable, config.IsAutoDelete, null);
+                        channe.QueueBind(config.QueueName, config.Exchange.ExchangeName, config.Exchange.RouteKey);
                         channe.BasicPublish(config.Exchange.ExchangeName, config.Exchange.RouteKey, null, body);
                     }
 
@@ -79,7 +78,6 @@ namespace FastRabbitMQ.Core
                 aop.Exception(context);
             }
         }
-
 
         internal static Dictionary<string, object> ToDic(string content)
         {
