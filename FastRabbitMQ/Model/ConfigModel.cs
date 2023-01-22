@@ -18,5 +18,6 @@
 
         public bool IsEmpty { get; set; }
 
+        public byte? MaxPriority {get;set;}
     }
 }
