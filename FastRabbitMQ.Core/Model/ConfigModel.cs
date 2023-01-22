@@ -19,5 +19,7 @@ namespace FastRabbitMQ.Core.Model
         public bool IsUnused { get; set; }
 
         public bool IsEmpty { get; set; }
+
+        public byte? MaxPriority { get; set; }
     }
 }
