@@ -81,13 +81,21 @@ namespace Microsoft.Extensions.DependencyInjection
             try
             {
                 var channe = conn.CreateModel();
-                channe.QueueDeclare(config.QueueName, config.IsDurable, config.IsExclusive, config.IsAutoDelete, null);
+
+                Dictionary<string, object> arguments = null;
+                if (config.MaxPriority != null)
+                    arguments = new Dictionary<string, object>
+                        {
+                            { "x-max-priority", config.MaxPriority.Value }
+                        };
+
+                channe.QueueDeclare(config.QueueName, config.IsDurable, config.IsExclusive, config.IsAutoDelete, arguments);
                 if (config.Exchange != null)
                 {
                     if (string.IsNullOrEmpty(config.Exchange.ExchangeName))
                         throw new Exception("Exchange ExchangeName is not null");
 
-                    channe.ExchangeDeclare(config.Exchange.ExchangeName, config.Exchange.ExchangeType.ToString(), config.IsDurable, config.IsAutoDelete, null);
+                    channe.ExchangeDeclare(config.Exchange.ExchangeName, config.Exchange.ExchangeType.ToString(), config.IsDurable, config.IsAutoDelete, arguments);
                     channe.QueueBind(config.QueueName, config.Exchange.ExchangeName, config.Exchange.RouteKey);
                 }
 

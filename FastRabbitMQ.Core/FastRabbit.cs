@@ -23,15 +23,29 @@ namespace FastRabbitMQ.Core
             {
                 using (var channe = conn.CreateModel())
                 {
+                    IBasicProperties property = null;
+                    if (config.IsDurable)
+                    {
+                        property = channe.CreateBasicProperties();
+                        property.Persistent = true;
+                    }
+
+                    Dictionary<string, object> arguments = null;
+                    if (config.MaxPriority != null)
+                        arguments = new Dictionary<string, object>
+                        {
+                            { "x-max-priority", config.MaxPriority.Value }
+                        };
+
                     var body = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(content, jsonOption));
-                    channe.QueueDeclare(config.QueueName, config.IsDurable, config.IsExclusive, config.IsAutoDelete, null);
+                    channe.QueueDeclare(config.QueueName, config.IsDurable, config.IsExclusive, config.IsAutoDelete, arguments);
                     if (config.Exchange == null)
-                        channe.BasicPublish("", config.QueueName, null, body);
+                        channe.BasicPublish("", config.QueueName, property, body);
                     else
                     {
-                        channe.ExchangeDeclare(config.Exchange.ExchangeName, config.Exchange.ExchangeType.ToString(), config.IsDurable, config.IsAutoDelete, null);
+                        channe.ExchangeDeclare(config.Exchange.ExchangeName, config.Exchange.ExchangeType.ToString(), config.IsDurable, config.IsAutoDelete, arguments);
                         channe.QueueBind(config.QueueName, config.Exchange.ExchangeName, config.Exchange.RouteKey);
-                        channe.BasicPublish(config.Exchange.ExchangeName, config.Exchange.RouteKey, null, body);
+                        channe.BasicPublish(config.Exchange.ExchangeName, config.Exchange.RouteKey, property, body);
                     }
 
                     var send = new SendContext();
