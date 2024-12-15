@@ -1,22 +1,21 @@
-﻿using RabbitMQ.Client;
-using System;
-using Microsoft.Extensions.DependencyInjection;
-using FastRabbitMQ.Core;
+﻿using FastRabbitMQ.Core;
 using FastRabbitMQ.Core.Aop;
 using FastRabbitMQ.Core.Model;
-using RabbitMQ.Client.Events;
-using System.Collections.Generic;
-using System.Text;
 using Microsoft.Extensions.Configuration;
-using System.IO;
 using Microsoft.Extensions.Options;
-using System.Threading.Channels;
+using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
     public static class FastRabbitMQExtension
     {
         private static string key = "RabbitMQ";
+        private static string receiveQueueName = "RabbitMQReceive";
 
         public static IServiceCollection AddFastRabbitMQ(this IServiceCollection serviceCollection, IFastRabbitAop aop)
         {
@@ -29,7 +28,7 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new Exception(@"services.AddFastRabbitMQ(a => {  }); 
                                     or ( services.AddFastRabbitMQ(); and db.json add 'RabbitMQ':{'Server':'','PassWord':'','UserName':'','Port':5672,'VirtualHost':'/'} )");
             config.aop = aop;
-            init(serviceCollection,config);
+            init(serviceCollection, config);
             return serviceCollection;
         }
 
@@ -58,6 +57,29 @@ namespace Microsoft.Extensions.DependencyInjection
             if (config.aop == null)
                 throw new Exception("AddFastRabbitMQ aop not null");
 
+            var receiveConfig = new ConfigModel()
+            {
+                QueueName = receiveQueueName,
+                IsAutoAsk = true,
+                IsDurable = true,
+                Exchange = new Exchange { ExchangeType = FastRabbitMQ.Core.Model.ExchangeType.direct }                
+            };
+
+            var content = new Dictionary<string, object>();
+            try
+            {
+                MqReceive(conn, config.aop, receiveConfig, true);
+            }
+            catch (Exception ex)
+            {
+                var context = new ExceptionContext();
+                context.content = content;
+                context.ex = ex;
+                context.isReceive = true;
+                context.config = receiveConfig;
+                config.aop.Exception(context);
+            }
+
             serviceCollection.AddSingleton<IConnection>(conn);
             serviceCollection.AddSingleton<IFastRabbitAop>(config.aop);
             ServiceContext.Init(new ServiceEngine(serviceCollection.BuildServiceProvider()));
@@ -70,52 +92,20 @@ namespace Microsoft.Extensions.DependencyInjection
 
             var conn = ServiceContext.Engine.Resolve<IConnection>();
             var aop = ServiceContext.Engine.Resolve<IFastRabbitAop>();
-            Dictionary<string, object> content = new Dictionary<string, object>();
+            var content = new Dictionary<string, object>();
 
             var config = new ConfigModel();
             action(config);
+
+            if (string.IsNullOrEmpty(config.Exchange?.ExchangeName))
+                throw new Exception("Exchange ExchangeName is not null");
 
             if (string.IsNullOrEmpty(config.QueueName))
                 throw new Exception("QueueName is not null");
 
             try
             {
-                var channe = conn.CreateModel();
-
-                Dictionary<string, object> arguments = null;
-                if (config.MaxPriority != null)
-                    arguments = new Dictionary<string, object>
-                        {
-                            { "x-max-priority", config.MaxPriority.Value }
-                        };
-
-                channe.QueueDeclare(config.QueueName, config.IsDurable, config.IsExclusive, config.IsAutoDelete, arguments);
-                if (config.Exchange != null)
-                {
-                    if (string.IsNullOrEmpty(config.Exchange.ExchangeName))
-                        throw new Exception("Exchange ExchangeName is not null");
-
-                    channe.ExchangeDeclare(config.Exchange.ExchangeName, config.Exchange.ExchangeType.ToString(), config.IsDurable, config.IsAutoDelete, arguments);
-                    channe.QueueBind(config.QueueName, config.Exchange.ExchangeName, config.Exchange.RouteKey);
-                }
-
-                if (!config.IsAutoAsk)
-                    channe.BasicQos(0, 1, true);
-                var consumer = new EventingBasicConsumer(channe);
-
-                consumer.Received += (a, b) =>
-                {
-                    content = FastRabbit.ToDic(Encoding.UTF8.GetString(b.Body.ToArray()));
-
-                    var receive = new ReceiveContext();
-                    receive.config = config;
-                    receive.content = content;
-                    aop.Receive(receive);
-
-                    if (!config.IsAutoAsk)
-                        channe.BasicAck(b.DeliveryTag, false);
-                };
-                channe.BasicConsume(config.QueueName, config.IsAutoAsk, consumer);
+                MqReceive(conn, aop, config);
             }
             catch (Exception ex)
             {
@@ -128,6 +118,45 @@ namespace Microsoft.Extensions.DependencyInjection
             }
 
             return serviceCollection;
+        }
+
+        private static void MqReceive(IConnection conn, IFastRabbitAop aop, ConfigModel config, bool isSendReceive = false)
+        {
+            var content = new Dictionary<string, object>();
+            var channe = conn.CreateModel();
+            Dictionary<string, object> arguments = null;
+
+            if (config.MaxPriority != null)
+                arguments = new Dictionary<string, object>
+                        {
+                            { "x-max-priority", config.MaxPriority.Value }
+                        };
+
+            channe.QueueDeclare(config.QueueName, config.IsDurable, config.IsExclusive, config.IsAutoDelete, arguments);
+            channe.ExchangeDeclare(config.Exchange.ExchangeName, config.Exchange.ExchangeType.ToString(), config.IsDurable, config.IsAutoDelete);
+            channe.QueueBind(config.QueueName, config.Exchange.ExchangeName, config.Exchange.RouteKey);
+
+            if (!config.IsAutoAsk)
+                channe.BasicQos(0, 1, true);
+            var consumer = new EventingBasicConsumer(channe);
+            consumer.Received += (a, b) =>
+            {
+                content = FastRabbit.ToDic(Encoding.UTF8.GetString(b.Body.ToArray()));
+
+                var receive = new ReceiveContext();
+                receive.config = config;
+                receive.content = content;
+
+                if (isSendReceive && aop != null)
+                    aop.Receive(new ReceiveContext { content = content, config = config });
+
+                if (!isSendReceive)
+                    aop.Receive(receive);
+
+                if (!config.IsAutoAsk)
+                    channe.BasicAck(b.DeliveryTag, false);
+            };
+            channe.BasicConsume(config.QueueName, config.IsAutoAsk, consumer);
         }
     }
 }
